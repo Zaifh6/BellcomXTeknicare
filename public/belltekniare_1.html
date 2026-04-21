@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bellcom × Empowered Support</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0f12;
+      --surface: #161920;
+      --surface-2: #1e2229;
+      --surface-3: #262c35;
+      --border: rgba(255,255,255,0.07);
+      --border-strong: rgba(255,255,255,0.12);
+      --text: #e2e6ed;
+      --text-muted: #6b7585;
+      --text-dim: #4a5160;
+      --accent: #4f7fff;
+      --accent-glow: rgba(79,127,255,0.18);
+      --accent-dim: rgba(79,127,255,0.10);
+      --green: #34d399;
+      --green-dim: rgba(52,211,153,0.12);
+      --amber: #f59e0b;
+      --red: #f87171;
+      --user-bg: #2a3a6e;
+      --user-text: #c7d9ff;
+      --radius: 14px;
+      --radius-sm: 8px;
+      --shadow: 0 2px 16px rgba(0,0,0,0.4);
+      --shadow-lg: 0 8px 40px rgba(0,0,0,0.6);
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100dvh;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── Scrollbar ─── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 4px; }
+
+    /* ─── Animations ─── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes shake {
+      10%, 90% { transform: translate3d(-2px, 0, 0); }
+      20%, 80% { transform: translate3d(3px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-5px, 0, 0); }
+      40%, 60% { transform: translate3d(5px, 0, 0); }
+    }
+    @keyframes dot {
+      0%, 100% { opacity: 0.3; transform: translateY(0); }
+      50% { opacity: 1; transform: translateY(-3px); }
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes pulse-green {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(52,211,153,0.4); }
+      50% { box-shadow: 0 0 0 4px rgba(52,211,153,0); }
+    }
+
+    .anim-fadeup { animation: fadeUp 0.35s ease-out forwards; }
+    .anim-fadein { animation: fadeIn 0.3s ease forwards; }
+
+    /* ─── Background noise texture ─── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+      opacity: 0.5;
+    }
+
+    /* ─────────────── LOGIN SCREEN ─────────────── */
+    #login-screen {
+      position: fixed; inset: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--bg);
+      transition: opacity 0.35s ease;
+    }
+
+    /* Grid background */
+    #login-screen::after {
+      content: '';
+      position: absolute; inset: 0; pointer-events: none;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 0%, transparent 100%);
+    }
+
+    .login-card {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 400px;
+      margin: 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 20px;
+      padding: 2.5rem 2rem;
+      box-shadow: var(--shadow-lg), 0 0 0 1px rgba(255,255,255,0.04) inset;
+    }
+
+    .login-logo {
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg, #3b5fc0, var(--accent));
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1.5rem;
+      box-shadow: 0 0 24px var(--accent-glow);
+    }
+
+    .login-title {
+      text-align: center;
+      font-size: 1.125rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      margin-bottom: 0.375rem;
+    }
+
+    .login-sub {
+      text-align: center;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+      line-height: 1.5;
+    }
+
+    .field-label {
+      display: block;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .field-input {
+      width: 100%;
+      background: var(--surface-2);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      padding: 0.875rem 1rem;
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.9375rem;
+      text-align: center;
+      letter-spacing: 0.3em;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .field-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+    .field-input::placeholder { letter-spacing: 0.2em; color: var(--text-dim); }
+
+    .login-btn {
+      width: 100%;
+      margin-top: 1.25rem;
+      background: var(--accent);
+      color: #fff;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.875rem;
+      font-weight: 600;
+      padding: 0.875rem;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+      box-shadow: 0 4px 16px rgba(79,127,255,0.3);
+    }
+    .login-btn:hover { background: #6690ff; box-shadow: 0 4px 24px rgba(79,127,255,0.45); }
+    .login-btn:active { transform: scale(0.99); }
+
+    .login-error {
+      font-size: 0.75rem;
+      color: var(--red);
+      text-align: center;
+      margin-top: 0.625rem;
+      font-weight: 500;
+      display: none;
+    }
+
+    .login-footer {
+      margin-top: 1.5rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+    }
+
+    /* ─────────────── APP SCREEN ─────────────── */
+    #app-screen {
+      display: none;
+      height: 100dvh;
+      width: 100%;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    #app-screen.visible {
+      display: flex;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    .chat-window {
+      width: 100%; max-width: 720px;
+      height: 100%;
+      max-height: 840px;
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+    }
+
+    /* ─── Header ─── */
+    .chat-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface);
+      shrink: 0;
+    }
+
+    .header-brand {
+      display: flex; align-items: center; gap: 10px;
+    }
+
+    .header-avatar {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #2a3f8a, var(--accent));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+    .header-avatar svg { color: #fff; }
+
+    .status-dot {
+      position: absolute;
+      bottom: -2px; right: -2px;
+      width: 10px; height: 10px;
+      background: var(--green);
+      border: 2px solid var(--surface);
+      border-radius: 50%;
+      animation: pulse-green 2.5s infinite;
+    }
+
+    .header-name {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .header-status {
+      font-size: 0.6875rem;
+      font-weight: 500;
+      color: var(--green);
+      letter-spacing: 0.04em;
+      display: flex; align-items: center; gap: 5px;
+    }
+
+    .header-actions { display: flex; gap: 4px; }
+    .icon-btn {
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .icon-btn:hover { background: var(--surface-3); color: var(--text); }
+    #logout-btn:hover { color: var(--red); background: rgba(248,113,113,0.08); }
+
+    /* ─── Suggested pills ─── */
+    .suggestions-bar {
+      padding: 0.75rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; gap: 6px; flex-wrap: wrap;
+      background: var(--surface);
+    }
+
+    .suggest-pill {
+      background: var(--surface-2);
+      border: 1px solid var(--border-strong);
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 5px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .suggest-pill:hover {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: #8fb3ff;
+    }
+
+    /* ─── Messages ─── */
+    #chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.125rem;
+      background: var(--bg);
+    }
+
+    .session-divider {
+      display: flex; align-items: center; gap: 0.75rem;
+      margin: 0.25rem 0;
+    }
+    .session-divider hr {
+      flex: 1; border: none; border-top: 1px solid var(--border);
+    }
+    .session-divider span {
+      font-size: 0.625rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      white-space: nowrap;
+    }
+
+    /* Bot message */
+    .msg-bot {
+      display: flex; align-items: flex-start; gap: 10px;
+      max-width: 88%;
+    }
+    .bot-avatar {
+      width: 30px; height: 30px; flex-shrink: 0;
+      background: var(--surface-2);
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      margin-top: 2px;
+      color: #7aa3ff;
+    }
+    .bot-bubble {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 4px 12px 12px 12px;
+      padding: 0.875rem 1rem;
+      font-size: 0.875rem;
+      line-height: 1.65;
+      color: var(--text);
+    }
+    .bot-bubble strong { color: #c0d4ff; font-weight: 600; }
+
+    /* User message */
+    .msg-user {
+      display: flex; justify-content: flex-end;
+    }
+    .user-bubble {
+      background: var(--user-bg);
+      border: 1px solid rgba(79,127,255,0.2);
+      border-radius: 12px 4px 12px 12px;
+      padding: 0.875rem 1rem;
+      font-size: 0.875rem;
+      line-height: 1.65;
+      color: var(--user-text);
+      max-width: 80%;
+    }
+
+    /* Ticket CTA */
+    .ticket-cta {
+      margin-top: 0.875rem;
+      padding-top: 0.875rem;
+      border-top: 1px solid var(--border);
+      display: flex; gap: 8px; flex-wrap: wrap;
+    }
+    .cta-btn {
+      background: var(--surface-3);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      padding: 6px 14px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+      transition: all 0.15s;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .cta-btn:hover { background: var(--accent-dim); border-color: var(--accent); color: #8fb3ff; }
+    .cta-btn.primary {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: #8fb3ff;
+    }
+    .cta-btn.primary:hover { background: rgba(79,127,255,0.2); }
+
+    /* Step list in answers */
+    .step-list {
+      margin-top: 0.625rem;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .step-item {
+      display: flex; align-items: flex-start; gap: 8px;
+    }
+    .step-num {
+      width: 20px; height: 20px; flex-shrink: 0;
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      border-radius: 50%;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      color: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      margin-top: 1px;
+    }
+    .step-text { font-size: 0.8125rem; color: var(--text-muted); line-height: 1.5; }
+
+    /* Info card in answers */
+    .info-card {
+      margin-top: 0.75rem;
+      background: var(--surface-3);
+      border: 1px solid var(--border-strong);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 8px 8px 0;
+      padding: 0.75rem;
+    }
+    .info-card-title {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.375rem;
+    }
+    .info-card-body { font-size: 0.8125rem; color: var(--text-muted); line-height: 1.5; }
+
+    /* Badge tag */
+    .tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: var(--surface-3);
+      border: 1px solid var(--border-strong);
+      border-radius: 4px;
+      padding: 2px 7px;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      font-family: 'DM Mono', monospace;
+    }
+
+    /* Typing indicator */
+    .typing-bubble {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 4px 12px 12px 12px;
+      padding: 0.875rem 1rem;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .typing-dot {
+      width: 5px; height: 5px;
+      background: var(--text-dim);
+      border-radius: 50%;
+      animation: dot 1.4s infinite ease-in-out;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    /* ─── Input Footer ─── */
+    .chat-footer {
+      padding: 1rem 1.25rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .input-row {
+      display: flex; align-items: flex-end; gap: 8px;
+    }
+    .input-wrap {
+      flex: 1;
+      background: var(--surface-2);
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      display: flex; align-items: center;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .input-wrap:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+    #chat-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      resize: none;
+      padding: 0.875rem 1rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.875rem;
+      color: var(--text);
+      min-height: 48px;
+      max-height: 120px;
+      line-height: 1.5;
+    }
+    #chat-input::placeholder { color: var(--text-dim); }
+    #send-btn {
+      width: 44px; height: 44px; flex-shrink: 0;
+      background: var(--surface-3);
+      border: 1px solid var(--border-strong);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    #send-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(79,127,255,0.35);
+    }
+    #send-btn.active:hover { background: #6690ff; }
+    #send-btn:disabled { opacity: 0.4; cursor: default; }
+
+    .footer-note {
+      text-align: center;
+      margin-top: 0.625rem;
+      font-size: 0.625rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: var(--text-dim);
+    }
+
+    @media (max-width: 600px) {
+      #app-screen { padding: 0; }
+      .chat-window { border-radius: 0; max-height: 100dvh; }
+      .suggestions-bar { padding: 0.625rem 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─────────── LOGIN SCREEN ─────────── -->
+<div id="login-screen">
+  <div class="login-card anim-fadeup">
+    <div class="login-logo">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+      </svg>
+    </div>
+    <div class="login-title">Bellcom × Empowered</div>
+    <div class="login-sub">Enter your access code to connect to the internal HR support assistant.</div>
+
+    <form id="login-form">
+      <label class="field-label" for="password-input">Access Code</label>
+      <input type="password" id="password-input" class="field-input" placeholder="• • • •" autocomplete="off" maxlength="20">
+      <div id="login-error" class="login-error">Incorrect access code. Please try again.</div>
+      <button type="submit" class="login-btn">
+        Authenticate
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      </button>
+    </form>
+
+    <div class="login-footer">Authorized Personnel Only &nbsp;·&nbsp; Confidential</div>
+  </div>
+</div>
+
+
+<!-- ─────────── APP SCREEN ─────────── -->
+<div id="app-screen">
+  <div class="chat-window">
+
+    <!-- Header -->
+    <header class="chat-header">
+      <div class="header-brand">
+        <div class="header-avatar">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+          <div class="status-dot"></div>
+        </div>
+        <div>
+          <div class="header-name">Empowered Assistant</div>
+          <div class="header-status">
+            <svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3" fill="var(--green)"/></svg>
+            Online &amp; Ready
+          </div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" title="Settings">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+        <button id="logout-btn" class="icon-btn" title="Logout">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Suggested questions -->
+    <div class="suggestions-bar" id="suggestions-bar">
+      <button class="suggest-pill" data-q="How do I access my training modules?">Training modules</button>
+      <button class="suggest-pill" data-q="How do I request PTO?">Request PTO</button>
+      <button class="suggest-pill" data-q="I can't log into the portal">Portal login issue</button>
+      <button class="suggest-pill" data-q="How do I submit a benefits claim?">Benefits claim</button>
+      <button class="suggest-pill" data-q="When is payroll processed?">Payroll dates</button>
+      <button class="suggest-pill" data-q="How do I submit an expense report?">Expense reports</button>
+      <button class="suggest-pill" data-q="Where are my performance goals?">Performance goals</button>
+      <button class="suggest-pill" data-q="How do I update my emergency contact?">Emergency contact</button>
+    </div>
+
+    <!-- Messages -->
+    <main id="chat-messages">
+      <div class="session-divider">
+        <hr><span>Secure Session Active</span><hr>
+      </div>
+
+      <!-- Welcome message -->
+      <div class="msg-bot anim-fadeup">
+        <div class="bot-avatar">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <div class="bot-bubble">
+          Welcome back. Authentication successful. ✓<br><br>
+          I'm your <strong>Empowered HR Assistant</strong> for Bellcom. I can help you with:
+          <div class="step-list" style="margin-top:0.5rem">
+            <div class="step-item"><div class="step-num">→</div><div class="step-text">Training &amp; certifications in the Empowered portal</div></div>
+            <div class="step-item"><div class="step-num">→</div><div class="step-text">Benefits, wellness claims &amp; health coverage</div></div>
+            <div class="step-item"><div class="step-num">→</div><div class="step-text">Payroll, expenses &amp; time off requests</div></div>
+            <div class="step-item"><div class="step-num">→</div><div class="step-text">Performance goals, reviews &amp; onboarding</div></div>
+          </div>
+          <br>Use the quick-access buttons above or type your question below.
+        </div>
+      </div>
+    </main>
+
+    <!-- Input -->
+    <footer class="chat-footer">
+      <form id="chat-form">
+        <div class="input-row">
+          <div class="input-wrap">
+            <textarea id="chat-input" rows="1" placeholder="Ask me anything about Bellcom HR…"></textarea>
+          </div>
+          <button type="submit" id="send-btn" disabled>
+            <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-left:2px"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </form>
+      <div class="footer-note">Bellcom internal use only &nbsp;·&nbsp; Interactions are monitored for quality assurance</div>
+    </footer>
+
+  </div>
+</div>
+
+<script>
+// ─── LOGIN LOGIC ─────────────────────────────────────────
+const loginForm   = document.getElementById('login-form');
+const pwInput     = document.getElementById('password-input');
+const loginError  = document.getElementById('login-error');
+const loginScreen = document.getElementById('login-screen');
+const appScreen   = document.getElementById('app-screen');
+const logoutBtn   = document.getElementById('logout-btn');
+
+loginForm.addEventListener('submit', e => {
+  e.preventDefault();
+  const pw = pwInput.value.trim();
+  // try server-side user login; if server not configured for USER_PASSWORD, fallback to local check
+  fetch('/user/login', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: pw }),
+  }).then(async r => {
+    if (r.ok) {
+      loginError.style.display = 'none';
+      loginScreen.style.opacity = '0';
+      setTimeout(() => {
+        loginScreen.style.display = 'none';
+        appScreen.classList.add('visible');
+        document.getElementById('chat-input').focus();
+      }, 350);
+      return;
+    }
+    // server indicates user password not configured -> allow default local code (legacy)
+    if (r.status === 400) {
+      const body = await r.json().catch(()=>({}));
+      if (body.error === 'no_user_password') {
+        if (pw === '1234') {
+          loginError.style.display = 'none';
+          loginScreen.style.opacity = '0';
+          setTimeout(() => {
+            loginScreen.style.display = 'none';
+            appScreen.classList.add('visible');
+            document.getElementById('chat-input').focus();
+          }, 350);
+          return;
+        }
+        // else treat as failure
+      }
+    }
+    // default: failure
+    loginError.style.display = 'block';
+    pwInput.value = '';
+    loginForm.style.animation = 'none';
+    void loginForm.offsetWidth;
+    loginForm.style.animation = 'shake 0.4s ease';
+  }).catch(() => {
+    // network error: fallback to local check
+    if (pw === '1234') {
+      loginError.style.display = 'none';
+      loginScreen.style.opacity = '0';
+      setTimeout(() => {
+        loginScreen.style.display = 'none';
+        appScreen.classList.add('visible');
+        document.getElementById('chat-input').focus();
+      }, 350);
+      return;
+    }
+    loginError.style.display = 'block';
+    pwInput.value = '';
+    loginForm.style.animation = 'none';
+    void loginForm.offsetWidth;
+    loginForm.style.animation = 'shake 0.4s ease';
+  });
+});
+
+logoutBtn.addEventListener('click', () => {
+  appScreen.classList.remove('visible');
+  loginScreen.style.display = 'flex';
+  setTimeout(() => { loginScreen.style.opacity = '1'; }, 10);
+  pwInput.value = '';
+  loginError.style.display = 'none';
+});
+
+// ─── CHAT LOGIC ──────────────────────────────────────────
+const responses = [
+  // TRAINING
+  {
+    match: ['training', 'module', 'course', 'certification', 'learn', 'e-learning', 'lms'],
+    reply: `To access your training modules, navigate to the <strong>'My Learning'</strong> tab in the Empowered Portal.`,
+    steps: [
+      'Log in to <strong>portal.empowered.com</strong> using your Bellcom SSO',
+      'Click <strong>My Learning</strong> in the left sidebar',
+      'Select a module — progress auto-saves, so you can resume anytime',
+      'Mandatory compliance modules must be completed by <strong>30th of each quarter</strong>'
+    ],
+    info: { label: 'Tip', text: 'If a course won\'t load, try Chrome or clear cache (Ctrl+Shift+Delete). Contact IT if the issue persists.' },
+    ticket: false,
+    ctaLabel: 'Browse Course Catalog'
+  },
+
+  // PTO / TIME OFF
+  {
+    match: ['pto', 'vacation', 'time off', 'leave', 'holiday', 'annual leave', 'absence'],
+    reply: `Time-off requests are submitted through the <strong>Time &amp; Attendance</strong> module in Empowered.`,
+    steps: [
+      'Go to <strong>Time &amp; Attendance → Request Leave</strong>',
+      'Select your leave type: Annual, Sick, Bereavement, or Unpaid',
+      'Choose dates and add an optional note for your manager',
+      'Your manager will receive an approval email within <strong>1 business day</strong>'
+    ],
+    info: { label: 'Balance', text: 'Your remaining PTO balance is shown at the top right of the Time & Attendance dashboard. Balances reset on January 1st each year.' },
+    ticket: false,
+    ctaLabel: 'Open Time & Attendance'
+  },
+
+  // PORTAL LOGIN
+  {
+    match: ['login', 'access', 'portal', 'password', 'sign in', 'locked', 'sso', 'account', 'log in', 'can\'t log'],
+    reply: `For Empowered Portal access issues, please use your standard <strong>Bellcom SSO</strong> credentials.`,
+    steps: [
+      'Visit <strong>portal.empowered.com</strong> and click <em>"Sign in with Bellcom SSO"</em>',
+      'If prompted for MFA, check your Bellcom Authenticator app',
+      'Locked out? Use <strong>Self-Service Password Reset</strong> at <em>sso.bellcom.internal</em>',
+      'Account still inaccessible after reset? Submit an IT ticket below'
+    ],
+    info: { label: 'Note', text: 'Accounts are temporarily locked after 5 failed login attempts. Auto-unlock happens after 15 minutes.' },
+    ticket: true,
+    ctaLabel: 'Submit IT Ticket'
+  },
+
+  // BENEFITS / HEALTH
+  {
+    match: ['benefits', 'wellness', 'health', 'claims', 'insurance', 'dental', 'vision', 'medical'],
+    reply: `All wellness benefits and claims are managed in the <strong>Benefits</strong> section of the Empowered portal.`,
+    steps: [
+      'Go to <strong>Benefits → My Coverage</strong> to view your active plan',
+      'To submit a claim: <strong>Benefits → Submit Claim</strong>, upload your receipt',
+      'Claims are processed within <strong>5–7 business days</strong>',
+      'Open enrollment window is every <strong>November 1–15</strong>'
+    ],
+    info: { label: 'Coverage query?', text: 'For specific coverage questions (what\'s included, deductibles, network providers), the Empowered HR team can be reached at benefits@empowered.bellcom.com' },
+    ticket: true,
+    ctaLabel: 'Go to Benefits Dashboard'
+  },
+
+  // PAYROLL
+  {
+    match: ['payroll', 'salary', 'pay slip', 'payslip', 'pay date', 'bank account', 'direct deposit', 'compensation'],
+    reply: `Payroll details and payslips are accessible under <strong>Payroll &amp; Compensation</strong> in Empowered.`,
+    steps: [
+      'Go to <strong>Payroll → Pay History</strong> to download past payslips (PDF)',
+      'Bellcom processes payroll on the <strong>25th of each month</strong> (or the preceding Friday if it falls on a weekend)',
+      'To update your bank account: <strong>Payroll → Bank Details</strong> — changes take effect the following cycle',
+      'Tax documents (P60, W-2) are available under <strong>Payroll → Annual Documents</strong> in January'
+    ],
+    info: { label: 'Discrepancy?', text: 'If your pay amount looks incorrect, contact payroll@bellcom.com within 5 business days. Do not raise a ticket for this — payroll handles directly.' },
+    ticket: false,
+    ctaLabel: 'View Payslips'
+  },
+
+  // EXPENSE REPORTS
+  {
+    match: ['expense', 'reimbursement', 'receipt', 'claim expense', 'travel', 'business cost'],
+    reply: `Expense reports are submitted through the <strong>Finance</strong> module in the Empowered portal.`,
+    steps: [
+      'Navigate to <strong>Finance → Submit Expense</strong>',
+      'Select the expense category (Travel, Equipment, Client Entertainment, etc.)',
+      'Upload receipts — JPEG, PNG, or PDF accepted, max 5MB per file',
+      'Expenses under <strong>£/€/$50</strong> are auto-approved; higher amounts require manager sign-off',
+      'Reimbursements are paid with the <strong>following month\'s payroll</strong>'
+    ],
+    info: { label: 'Policy Limit', text: 'Meals: £40/day domestic, £60/day international. Hotel: £150/night pre-approved. Full policy at policy.bellcom.internal/expenses' },
+    ticket: false,
+    ctaLabel: 'Submit an Expense'
+  },
+
+  // PERFORMANCE
+  {
+    match: ['performance', 'review', 'goals', 'kpi', 'evaluation', 'appraisal', 'feedback', 'okr'],
+    reply: `Performance reviews and goal tracking live in the <strong>Growth</strong> section of the Empowered portal.`,
+    steps: [
+      'Open <strong>Growth → My Goals</strong> to view, edit, or add quarterly objectives',
+      'Quarterly goals must be submitted by the <strong>15th of the quarter\'s final month</strong>',
+      'Mid-year and annual reviews are scheduled automatically — you\'ll receive a calendar invite',
+      'Peer feedback requests can be sent via <strong>Growth → 360° Feedback</strong>'
+    ],
+    info: { label: 'Next Review', text: 'Q2 2025 check-in window: May 1–15. Annual appraisal: October–November. Prepare self-assessments at least 48 hours before scheduled meetings.' },
+    ticket: false,
+    ctaLabel: 'Open Growth Dashboard'
+  },
+
+  // ONBOARDING
+  {
+    match: ['onboarding', 'new hire', 'new employee', 'first day', 'joining', 'start', 'induction'],
+    reply: `Welcome to Bellcom! Your onboarding checklist is in the <strong>Onboarding Hub</strong> in Empowered.`,
+    steps: [
+      'Complete your <strong>profile setup</strong> including photo, bio, and emergency contacts',
+      'Finish all <strong>mandatory Day 1 compliance</strong> modules (Data Protection, Code of Conduct, H&S)',
+      'Your IT equipment request should be submitted in <strong>IT → New Hire Hardware</strong>',
+      'Book your <strong>Welcome Call with HR</strong> using the calendar link sent to your work email',
+      'Your buddy/mentor details are in <strong>Onboarding Hub → My Buddy</strong>'
+    ],
+    info: { label: 'Timeline', text: 'All onboarding tasks are expected to be completed within the first 30 days. Your manager will review progress at your Week 1 and Week 4 check-ins.' },
+    ticket: false,
+    ctaLabel: 'Open Onboarding Hub'
+  },
+
+  // EMERGENCY CONTACT / PERSONAL INFO
+  {
+    match: ['emergency contact', 'personal info', 'address', 'phone number', 'update details', 'profile'],
+    reply: `Personal details and emergency contacts are managed in your <strong>Employee Profile</strong>.`,
+    steps: [
+      'Click your <strong>avatar (top right)</strong> → Edit Profile',
+      'Update personal details: address, phone, preferred name, pronouns',
+      'Go to <strong>Profile → Emergency Contacts</strong> to add or update your contacts',
+      'Click <strong>Save &amp; Submit</strong> — HR is notified of major changes for payroll/compliance'
+    ],
+    info: { label: 'Important', text: 'Emergency contact information should be reviewed at least once per year. You\'ll receive a reminder email in January.' },
+    ticket: false,
+    ctaLabel: 'Update My Profile'
+  },
+
+  // IT / EQUIPMENT
+  {
+    match: ['laptop', 'equipment', 'hardware', 'it help', 'tech support', 'computer', 'phone', 'device', 'vpn'],
+    reply: `For IT and equipment requests, the Empowered portal connects you directly to the <strong>Bellcom IT Helpdesk</strong>.`,
+    steps: [
+      'Go to <strong>IT Support → Raise a Ticket</strong> and select the issue category',
+      'For hardware requests (replacement laptop, accessories): <strong>IT → Hardware Request</strong>',
+      'VPN issues: Ensure Bellcom GlobalProtect is up to date — download at <em>it.bellcom.internal/vpn</em>',
+      'Critical outages can be reported directly to <strong>it-urgent@bellcom.com</strong>'
+    ],
+    info: { label: 'Response SLAs', text: 'P1 (critical): 1hr. P2 (high): 4hrs. P3 (standard): 1 business day. Hardware delivery: 3–5 business days.' },
+    ticket: true,
+    ctaLabel: 'Raise IT Ticket'
+  },
+
+  // REFERRAL
+  {
+    match: ['refer', 'referral', 'refer a friend', 'recruitment', 'bonus', 'refer colleague'],
+    reply: `Bellcom's <strong>Employee Referral Programme</strong> is one of the most rewarding ways to grow the team.`,
+    steps: [
+      'Go to <strong>Careers → Refer a Candidate</strong> in the Empowered portal',
+      'Submit their name, email, and the role they\'re applying for',
+      'Referrals are tracked — you\'ll receive status updates by email',
+      'Referral bonus is paid <strong>6 months after the referred employee\'s start date</strong>'
+    ],
+    info: { label: 'Bonus Amount', text: 'Standard roles: £1,500 / $2,000. Senior/specialist roles: £3,000 / $4,000. Subject to tax deductions per your local jurisdiction.' },
+    ticket: false,
+    ctaLabel: 'Submit a Referral'
+  }
+];
+
+const chatMessages = document.getElementById('chat-messages');
+const chatForm     = document.getElementById('chat-form');
+const chatInput    = document.getElementById('chat-input');
+const sendBtn      = document.getElementById('send-btn');
+let isTyping = false;
+
+// Input resize + button state
+chatInput.addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = this.scrollHeight + 'px';
+  const hasText = this.value.trim().length > 0;
+  sendBtn.disabled = !hasText;
+  sendBtn.classList.toggle('active', hasText);
+});
+
+chatInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    if (this.value.trim()) chatForm.dispatchEvent(new Event('submit'));
+  }
+});
+
+// Suggestion pills
+document.getElementById('suggestions-bar').addEventListener('click', e => {
+  const pill = e.target.closest('.suggest-pill');
+  if (!pill || isTyping) return;
+  const q = pill.dataset.q;
+  chatInput.value = q;
+  chatInput.dispatchEvent(new Event('input'));
+  chatForm.dispatchEvent(new Event('submit'));
+});
+
+function scrollToBottom() {
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function addUserMsg(text) {
+  const el = document.createElement('div');
+  el.className = 'msg-user anim-fadeup';
+  el.innerHTML = `<div class="user-bubble">${escapeHtml(text)}</div>`;
+  chatMessages.appendChild(el);
+  scrollToBottom();
+}
+
+function showTyping() {
+  const id = 'typing-' + Date.now();
+  const el = document.createElement('div');
+  el.id = id;
+  el.className = 'msg-bot anim-fadeup';
+  el.innerHTML = `
+    <div class="bot-avatar">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    </div>
+    <div class="typing-bubble">
+      <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+    </div>`;
+  chatMessages.appendChild(el);
+  scrollToBottom();
+  return id;
+}
+
+function addBotMsg(data, typingId) {
+  const typingEl = document.getElementById(typingId);
+  if (typingEl) typingEl.remove();
+
+  let html = `<p>${data.reply}</p>`;
+
+  if (data.steps && data.steps.length) {
+    html += `<div class="step-list">`;
+    data.steps.forEach((s, i) => {
+      html += `<div class="step-item"><div class="step-num">${i+1}</div><div class="step-text">${s}</div></div>`;
+    });
+    html += `</div>`;
+  }
+
+  if (data.info) {
+    html += `<div class="info-card"><div class="info-card-title">${data.info.label}</div><div class="info-card-body">${data.info.text}</div></div>`;
+  }
+
+  // CTA buttons
+  html += `<div class="ticket-cta">`;
+  if (data.ctaLabel) {
+    html += `<button class="cta-btn primary">
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      ${data.ctaLabel}
+    </button>`;
+  }
+  if (data.ticket) {
+    html += `<button class="cta-btn">
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+      Create Support Ticket
+    </button>`;
+  }
+  html += `</div>`;
+
+  const el = document.createElement('div');
+  el.className = 'msg-bot anim-fadeup';
+  el.innerHTML = `
+    <div class="bot-avatar">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    </div>
+    <div class="bot-bubble">${html}</div>`;
+  chatMessages.appendChild(el);
+  scrollToBottom();
+}
+
+function getReply(text) {
+  const lower = text.toLowerCase();
+  for (const r of responses) {
+    if (r.match.some(k => lower.includes(k))) return r;
+  }
+  return {
+    reply: `Thanks for your message. I've logged this query in the system.`,
+    steps: [
+      'Your query has been securely recorded with reference <strong class="tag">#BCQ-' + Math.floor(Math.random()*90000+10000) + '</strong>',
+      'An HR support specialist will review and respond within <strong>1 business day</strong>',
+      'You can track this query in <strong>Empowered → My Requests</strong>'
+    ],
+    info: { label: 'In the meantime', text: 'Check the Bellcom HR Knowledge Base at help.bellcom.internal for answers to common questions.' },
+    ticket: true,
+    ctaLabel: 'Track My Request'
+  };
+}
+
+// Backend URL — same origin when served by server.js
+const API_URL = '/api/chat';
+
+// Keeps the last few turns so Groq has context
+const conversationHistory = [];
+
+async function fetchReplyFromBackend(text) {
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: text,
+        history: conversationHistory.slice(-6), // last 3 exchanges
+      }),
+    });
+      if (res.status === 401) {
+        // show login screen and instruct user to authenticate
+        loginError.style.display = 'none';
+        loginScreen.style.display = 'flex';
+        loginScreen.style.opacity = '1';
+        return {
+          reply: 'You must sign in to use the HR assistant. Please enter your access code.',
+          steps: [],
+          info: { label: 'Authentication', text: 'Enter your access code to continue.' },
+          ticket: false,
+          ctaLabel: null,
+        };
+      }
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+
+    // Update history for next turn
+    conversationHistory.push({ role: 'user', content: text });
+    conversationHistory.push({ role: 'assistant', content: data.reply || '' });
+
+    return data;
+  } catch (err) {
+    console.error('Backend error:', err);
+    return {
+      reply: `I couldn't reach the HR assistant right now. Check that the backend is running on localhost:3000.`,
+      steps: [],
+      info: { label: 'Debug', text: err.message },
+      ticket: false,
+      ctaLabel: null,
+    };
+  }
+}
+
+chatForm.addEventListener('submit', async e => {
+  e.preventDefault();
+  if (isTyping) return;
+  const text = chatInput.value.trim();
+  if (!text) return;
+
+  chatInput.value = '';
+  chatInput.style.height = 'auto';
+  sendBtn.disabled = true;
+  sendBtn.classList.remove('active');
+
+  addUserMsg(text);
+  isTyping = true;
+  chatInput.disabled = true;
+
+  const typingId = showTyping();
+
+  const reply = await fetchReplyFromBackend(text);
+  addBotMsg(reply, typingId);
+
+  isTyping = false;
+  chatInput.disabled = false;
+  chatInput.focus();
+});
+
+function escapeHtml(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>

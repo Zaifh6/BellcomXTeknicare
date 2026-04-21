@@ -1,0 +1,197 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin — Chat Sessions</title>
+  <style>
+    :root{--bg:#0d1117;--card:#0b1220;--muted:#7b8696;--accent:#4f7fff;--text:#e6eef8}
+    html,body{height:100%;margin:0;font-family:Inter,Segoe UI,system-ui;background:var(--bg);color:var(--text)}
+    .wrap{display:flex;gap:18px;padding:18px;height:100%}
+    .left{width:360px;background:var(--card);border-radius:12px;padding:12px;display:flex;flex-direction:column}
+    .right{flex:1;background:var(--card);border-radius:12px;padding:12px;display:flex;flex-direction:column}
+    .login{display:flex;gap:8px;align-items:center}
+    input{padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text);flex:1}
+    button{padding:8px 12px;border-radius:8px;border:none;background:var(--accent);color:#fff;cursor:pointer}
+    .sessions{margin-top:12px;overflow:auto}
+    .session-item{padding:10px;border-radius:8px;margin-bottom:8px;border:1px solid rgba(255,255,255,0.03);cursor:pointer}
+    .session-item:hover{background:rgba(79,127,255,0.04)}
+    .session-meta{font-size:12px;color:var(--muted);margin-bottom:6px}
+    .snippet{font-size:14px;color:var(--text);}
+    .toolbar{display:flex;gap:8px;align-items:center}
+    .actions{margin-left:auto;display:flex;gap:8px}
+    .chat-view{flex:1;overflow:auto;padding:8px;border-radius:8px}
+    .msg-bot{background:#0f1724;padding:10px;border-radius:8px;margin:8px 0;color:var(--text)}
+    .msg-user{background:linear-gradient(90deg,#2b3a70,#3b52a6);padding:10px;border-radius:8px;margin:8px 0;color:#dfe9ff;align-self:flex-end}
+    .meta{font-size:12px;color:var(--muted)}
+    .ctrls{display:flex;gap:8px;margin-top:8px}
+    pre{white-space:pre-wrap;font-size:13px;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="left">
+      <div class="login">
+        <input id="adminPw" type="password" placeholder="Admin password" />
+        <button id="loginBtn">Login</button>
+        <button id="logoutBtn" style="display:none;background:#222;border:1px solid rgba(255,255,255,0.03)">Logout</button>
+      </div>
+      <div class="toolbar" style="margin-top:10px">
+        <input id="filterInput" placeholder="Search sessions" style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:var(--text)" />
+        <button id="refreshBtn" title="Refresh">⟳</button>
+      </div>
+      <div class="sessions" id="sessions"></div>
+    </div>
+
+    <div class="right">
+      <div style="display:flex;align-items:center;gap:12px">
+        <h3 style="margin:0">Chat Session</h3>
+        <div class="meta" id="sessionInfo">Select a session to view details</div>
+        <div class="actions" style="margin-left:auto">
+          <button id="exportBtn" style="display:none">Export</button>
+          <button id="deleteBtn" style="display:none;background:#b93b3b">Delete</button>
+        </div>
+      </div>
+      <div class="chat-view" id="chatView"></div>
+    </div>
+  </div>
+
+  <script>
+    let sessions = [];
+    let current = null;
+
+    function prettyDate(iso){ try{ return new Date(iso).toLocaleString(); }catch(e){return iso} }
+
+    async function login(){
+      const pw = document.getElementById('adminPw').value;
+      const r = await fetch('/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw}),credentials:'same-origin'});
+      if (r.ok){
+        document.getElementById('logoutBtn').style.display='inline-block';
+        document.getElementById('loginBtn').style.display='none';
+        document.getElementById('adminPw').style.display='none';
+        loadSessions();
+      } else {
+        alert('Login failed');
+      }
+    }
+
+    async function logout(){
+      await fetch('/admin/logout',{method:'POST',credentials:'same-origin'});
+      document.getElementById('logoutBtn').style.display='none';
+      document.getElementById('loginBtn').style.display='inline-block';
+      document.getElementById('adminPw').style.display='inline-block';
+      sessions = [];
+      renderSessions();
+      document.getElementById('chatView').innerHTML='';
+      document.getElementById('sessionInfo').innerText='Select a session to view details';
+    }
+
+    async function loadSessions(){
+      const r = await fetch('/admin/chats',{credentials:'same-origin'});
+      const container = document.getElementById('sessions');
+      if (!r.ok){
+        container.innerHTML = '<div style="color:var(--muted);padding:12px">Please login as admin to view chat sessions.</div>';
+        return;
+      }
+      sessions = await r.json();
+      sessions.sort((a,b)=> (b.at||'').localeCompare(a.at||''));
+      renderSessions();
+    }
+
+    function renderSessions(){
+      const el = document.getElementById('sessions');
+      const q = document.getElementById('filterInput').value.trim().toLowerCase();
+      el.innerHTML = '';
+      for (const s of sessions){
+        const text = (s.message||'').toString();
+        if (q && !text.toLowerCase().includes(q) && !(s.reply && (s.reply.reply||'').toLowerCase().includes(q))) continue;
+        const item = document.createElement('div');
+        item.className = 'session-item';
+        item.innerHTML = `<div class='session-meta'>${prettyDate(s.at)} · id:${s.id}</div><div class='snippet'>${escapeHtml(text.slice(0,180))}</div>`;
+        item.addEventListener('click', ()=> selectSession(s.id));
+        el.appendChild(item);
+      }
+    }
+
+    function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    async function selectSession(id){
+      current = sessions.find(x=>String(x.id)===String(id));
+      if (!current){
+        const r = await fetch('/admin/chats/'+id,{credentials:'same-origin'});
+        if (!r.ok) { alert('Not found'); return; }
+        current = await r.json();
+      }
+      document.getElementById('sessionInfo').innerText = `Session ${current.id} · ${prettyDate(current.at)}`;
+      document.getElementById('exportBtn').style.display='inline-block';
+      document.getElementById('deleteBtn').style.display='inline-block';
+      renderChat(current);
+    }
+
+    function renderChat(entry){
+      const view = document.getElementById('chatView');
+      view.innerHTML = '';
+      // render history if present
+      const history = Array.isArray(entry.history) ? entry.history : [];
+      for (const h of history){
+        const normalized = normalizeHistItem(h);
+        appendMsg(view, normalized.role, normalized.text);
+      }
+
+      // user message
+      if (entry.message) appendMsg(view, 'user', entry.message);
+
+      // kb context
+      if (entry.kbContext) {
+        const kb = document.createElement('div'); kb.className='msg-bot'; kb.innerHTML = `<strong>KB Context</strong><pre>${escapeHtml(entry.kbContext)}</pre>`; view.appendChild(kb);
+      }
+
+      // reply
+      if (entry.reply){
+        const rep = entry.reply.reply || JSON.stringify(entry.reply);
+        appendMsg(view, 'assistant', rep);
+        if (entry.reply.steps && entry.reply.steps.length){
+          const steps = document.createElement('div'); steps.className='msg-bot'; steps.innerHTML = `<strong>Actionable Steps</strong><ol>${entry.reply.steps.map(s=>`<li>${escapeHtml(s)}</li>`).join('')}</ol>`; view.appendChild(steps);
+        }
+        if (entry.reply.info){
+          const info = document.createElement('div'); info.className='msg-bot'; info.innerHTML = `<strong>${escapeHtml(entry.reply.info.label||'Info')}</strong><div>${escapeHtml(entry.reply.info.text||'')}</div>`; view.appendChild(info);
+        }
+      }
+
+      // scroll to bottom
+      view.scrollTop = view.scrollHeight;
+    }
+
+    function normalizeHistItem(h){
+      if (!h) return { role:'user', text: '' };
+      if (typeof h === 'string') return { role: 'user', text: h };
+      if (h.role && (h.content || h.text)) return { role: h.role, text: h.content||h.text };
+      if (h.user) return { role: 'user', text: h.user };
+      return { role: 'user', text: JSON.stringify(h) };
+    }
+
+    function appendMsg(container, role, text){
+      const el = document.createElement('div');
+      el.className = role === 'user' ? 'msg-user' : 'msg-bot';
+      el.innerHTML = `<div>${escapeHtml(text)}</div>`;
+      container.appendChild(el);
+    }
+
+    document.getElementById('loginBtn').addEventListener('click', login);
+    document.getElementById('logoutBtn').addEventListener('click', logout);
+    document.getElementById('refreshBtn').addEventListener('click', loadSessions);
+    document.getElementById('filterInput').addEventListener('input', renderSessions);
+    document.getElementById('deleteBtn').addEventListener('click', async ()=>{
+      if (!current) return; if (!confirm('Delete this session?')) return;
+      const r = await fetch('/admin/chats/'+current.id, { method:'DELETE', credentials:'same-origin' });
+      if (r.ok){ alert('Deleted'); sessions = sessions.filter(s=>String(s.id)!==String(current.id)); renderSessions(); document.getElementById('chatView').innerHTML=''; document.getElementById('sessionInfo').innerText='Select a session to view details'; }
+      else alert('Failed to delete');
+    });
+    document.getElementById('exportBtn').addEventListener('click', ()=>{
+      if (!current) return; const data = JSON.stringify(current, null, 2); const blob = new Blob([data], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `session-${current.id}.json`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    });
+
+    // initial state: do not auto-load sessions; wait for login
+  </script>
+</body>
+</html>
