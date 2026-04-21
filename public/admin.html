@@ -64,14 +64,30 @@
 
     async function login(){
       const pw = document.getElementById('adminPw').value;
-      const r = await fetch('/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw}),credentials:'same-origin'});
+      let r;
+      try {
+        r = await fetch('/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: pw }),
+          credentials: 'same-origin'
+        });
+      } catch (err) {
+        console.error('[admin] network error on login', err);
+        alert('Network error: ' + (err.message || err));
+        return;
+      }
+
+      console.log('[admin] login response status=', r.status);
       if (r.ok){
         document.getElementById('logoutBtn').style.display='inline-block';
         document.getElementById('loginBtn').style.display='none';
         document.getElementById('adminPw').style.display='none';
         loadSessions();
       } else {
-        alert('Login failed');
+        let body = '';
+        try { body = await r.text(); } catch(e){ body = '<unable to read body>'; }
+        alert('Login failed — status ' + r.status + '\nServer response: ' + body);
       }
     }
 

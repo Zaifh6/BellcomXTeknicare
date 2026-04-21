@@ -12,6 +12,14 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());                     // allows your HTML file to talk to this server
 app.use(express.json());             // parses JSON request bodies
+// handle malformed JSON bodies gracefully so the server doesn't crash
+app.use((err, req, res, next) => {
+  if (err && (err instanceof SyntaxError) && (err.status === 400 || err.type === 'entity.parse.failed')) {
+    console.warn('[json] malformed JSON body:', err.message);
+    return res.status(400).json({ error: 'invalid_json' });
+  }
+  next(err);
+});
 app.use(cookieParser());             // parses cookies on incoming requests
 app.use(express.static('public'));   // serves your HTML from ./public
 
