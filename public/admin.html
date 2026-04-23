@@ -60,6 +60,19 @@
     let sessions = [];
     let current = null;
 
+    // Detect environment (same logic as belltekniare_1.html)
+    const IS_NETLIFY = !['localhost', '127.0.0.1'].includes(location.hostname);
+    const ADMIN_TOKEN_KEY = 'bellcom_admin_token';
+
+    function getAuthHeaders() {
+      const h = {};
+      if (IS_NETLIFY) {
+        const tok = localStorage.getItem(ADMIN_TOKEN_KEY);
+        if (tok) h['Authorization'] = 'Bearer ' + tok;
+      }
+      return h;
+    }
+
     function prettyDate(iso){ try{ return new Date(iso).toLocaleString(); }catch(e){return iso} }
 
     async function login(){
@@ -70,7 +83,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ password: pw }),
-          credentials: 'same-origin'
+          credentials: IS_NETLIFY ? 'omit' : 'same-origin'
         });
       } catch (err) {
         console.error('[admin] network error on login', err);
@@ -80,6 +93,10 @@
 
       console.log('[admin] login response status=', r.status);
       if (r.ok){
+        if (IS_NETLIFY) {
+          const data = await r.json().catch(() => ({}));
+          if (data.token) localStorage.setItem(ADMIN_TOKEN_KEY, data.token);
+        }
         document.getElementById('logoutBtn').style.display='inline-block';
         document.getElementById('loginBtn').style.display='none';
         document.getElementById('adminPw').style.display='none';
@@ -92,7 +109,8 @@
     }
 
     async function logout(){
-      await fetch('/admin/logout',{method:'POST',credentials:'same-origin'});
+      await fetch('/admin/logout',{method:'POST', credentials: IS_NETLIFY ? 'omit' : 'same-origin', headers: getAuthHeaders()});
+      if (IS_NETLIFY) localStorage.removeItem(ADMIN_TOKEN_KEY);
       document.getElementById('logoutBtn').style.display='none';
       document.getElementById('loginBtn').style.display='inline-block';
       document.getElementById('adminPw').style.display='inline-block';
@@ -103,13 +121,20 @@
     }
 
     async function loadSessions(){
-      const r = await fetch('/admin/chats',{credentials:'same-origin'});
+      const r = await fetch('/admin/chats',{
+        credentials: IS_NETLIFY ? 'omit' : 'same-origin',
+        headers: getAuthHeaders()
+      });
       const container = document.getElementById('sessions');
       if (!r.ok){
         container.innerHTML = '<div style="color:var(--muted);padding:12px">Please login as admin to view chat sessions.</div>';
         return;
       }
       sessions = await r.json();
+      if (!sessions.length) {
+        container.innerHTML = '<div style="color:var(--muted);padding:12px">No stored chat sessions yet. Chat history is only persisted when running locally.</div>';
+        return;
+      }
       sessions.sort((a,b)=> (b.at||'').localeCompare(a.at||''));
       renderSessions();
     }
@@ -199,10 +224,22 @@
     document.getElementById('filterInput').addEventListener('input', renderSessions);
     document.getElementById('deleteBtn').addEventListener('click', async ()=>{
       if (!current) return; if (!confirm('Delete this session?')) return;
-      const r = await fetch('/admin/chats/'+current.id, { method:'DELETE', credentials:'same-origin' });
+      const r = await fetch('/admin/chats/'+current.id, {
+        method:'DELETE',
+        credentials: IS_NETLIFY ? 'omit' : 'same-origin',
+        headers: getAuthHeaders()
+      });
       if (r.ok){ alert('Deleted'); sessions = sessions.filter(s=>String(s.id)!==String(current.id)); renderSessions(); document.getElementById('chatView').innerHTML=''; document.getElementById('sessionInfo').innerText='Select a session to view details'; }
       else alert('Failed to delete');
     });
+
+    // On Netlify: auto-restore admin session if token exists
+    if (IS_NETLIFY && localStorage.getItem(ADMIN_TOKEN_KEY)) {
+      document.getElementById('logoutBtn').style.display='inline-block';
+      document.getElementById('loginBtn').style.display='none';
+      document.getElementById('adminPw').style.display='none';
+      loadSessions();
+    }
     document.getElementById('exportBtn').addEventListener('click', ()=>{
       if (!current) return; const data = JSON.stringify(current, null, 2); const blob = new Blob([data], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `session-${current.id}.json`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     });

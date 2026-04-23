@@ -1,3 +1,39 @@
 [build]
   publish = "public"
-  command = "npm run build"
+  command = "echo 'No build step required'"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# ── API redirects: map the same paths used by server.js → Netlify Functions ──
+
+[[redirects]]
+  from = "/user/login"
+  to   = "/.netlify/functions/user-login"
+  status = 200
+
+[[redirects]]
+  from = "/admin/login"
+  to   = "/.netlify/functions/admin-login"
+  status = 200
+
+[[redirects]]
+  from = "/admin/logout"
+  to   = "/.netlify/functions/admin-logout"
+  status = 200
+
+[[redirects]]
+  from = "/admin/chats"
+  to   = "/.netlify/functions/admin-chats"
+  status = 200
+
+[[redirects]]
+  from = "/api/chat"
+  to   = "/.netlify/functions/chat"
+  status = 200
+
+[[redirects]]
+  from = "/api/health"
+  to   = "/.netlify/functions/health"
+  status = 200

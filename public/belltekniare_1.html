@@ -686,75 +686,88 @@ const loginScreen = document.getElementById('login-screen');
 const appScreen   = document.getElementById('app-screen');
 const logoutBtn   = document.getElementById('logout-btn');
 
-loginForm.addEventListener('submit', e => {
-  e.preventDefault();
-  const pw = pwInput.value.trim();
-  // try server-side user login; if server not configured for USER_PASSWORD, fallback to local check
-  fetch('/user/login', {
-    method: 'POST',
-    credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ password: pw }),
-  }).then(async r => {
-    if (r.ok) {
-      loginError.style.display = 'none';
-      loginScreen.style.opacity = '0';
-      setTimeout(() => {
-        loginScreen.style.display = 'none';
-        appScreen.classList.add('visible');
-        document.getElementById('chat-input').focus();
-      }, 350);
-      return;
-    }
-    // server indicates user password not configured -> allow default local code (legacy)
-    if (r.status === 400) {
-      const body = await r.json().catch(()=>({}));
-      if (body.error === 'no_user_password') {
-        if (pw === '1234') {
-          loginError.style.display = 'none';
-          loginScreen.style.opacity = '0';
-          setTimeout(() => {
-            loginScreen.style.display = 'none';
-            appScreen.classList.add('visible');
-            document.getElementById('chat-input').focus();
-          }, 350);
-          return;
-        }
-        // else treat as failure
-      }
-    }
-    // default: failure
-    loginError.style.display = 'block';
-    pwInput.value = '';
-    loginForm.style.animation = 'none';
-    void loginForm.offsetWidth;
-    loginForm.style.animation = 'shake 0.4s ease';
-  }).catch(() => {
-    // network error: fallback to local check
-    if (pw === '1234') {
-      loginError.style.display = 'none';
-      loginScreen.style.opacity = '0';
-      setTimeout(() => {
-        loginScreen.style.display = 'none';
-        appScreen.classList.add('visible');
-        document.getElementById('chat-input').focus();
-      }, 350);
-      return;
-    }
-    loginError.style.display = 'block';
-    pwInput.value = '';
-    loginForm.style.animation = 'none';
-    void loginForm.offsetWidth;
-    loginForm.style.animation = 'shake 0.4s ease';
-  });
-});
+// Detect environment:
+// - On Netlify (or any non-localhost): use JWT stored in localStorage.
+// - On localhost: use the original cookie-based flow (server.js sets the cookie).
+const IS_NETLIFY = !['localhost', '127.0.0.1'].includes(location.hostname);
+const JWT_STORAGE_KEY = 'bellcom_user_token';
 
-logoutBtn.addEventListener('click', () => {
+function showApp() {
+  loginError.style.display = 'none';
+  loginScreen.style.opacity = '0';
+  setTimeout(() => {
+    loginScreen.style.display = 'none';
+    appScreen.classList.add('visible');
+    document.getElementById('chat-input').focus();
+  }, 350);
+}
+
+function showLogin() {
   appScreen.classList.remove('visible');
   loginScreen.style.display = 'flex';
   setTimeout(() => { loginScreen.style.opacity = '1'; }, 10);
   pwInput.value = '';
   loginError.style.display = 'none';
+}
+
+function shakeForm() {
+  loginError.style.display = 'block';
+  pwInput.value = '';
+  loginForm.style.animation = 'none';
+  void loginForm.offsetWidth;
+  loginForm.style.animation = 'shake 0.4s ease';
+}
+
+// On Netlify: auto-restore session if a valid token is already in localStorage
+if (IS_NETLIFY && localStorage.getItem(JWT_STORAGE_KEY)) {
+  showApp();
+}
+
+loginForm.addEventListener('submit', async e => {
+  e.preventDefault();
+  const pw = pwInput.value.trim();
+
+  try {
+    const r = await fetch('/user/login', {
+      method: 'POST',
+      // Send cookies on localhost so Express can set the session cookie
+      credentials: IS_NETLIFY ? 'omit' : 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pw }),
+    });
+
+    if (r.ok) {
+      if (IS_NETLIFY) {
+        // Netlify path: persist the JWT returned by the function
+        const data = await r.json();
+        if (data.token) localStorage.setItem(JWT_STORAGE_KEY, data.token);
+      }
+      showApp();
+      return;
+    }
+
+    // Server says USER_PASSWORD not configured — accept legacy local code
+    if (r.status === 400) {
+      const body = await r.json().catch(() => ({}));
+      if (body.error === 'no_user_password' && pw === '1234') {
+        showApp();
+        return;
+      }
+    }
+
+    // Wrong password
+    shakeForm();
+  } catch {
+    // Network error
+    // On localhost only: allow offline fallback with '1234'
+    if (!IS_NETLIFY && pw === '1234') { showApp(); return; }
+    shakeForm();
+  }
+});
+
+logoutBtn.addEventListener('click', () => {
+  if (IS_NETLIFY) localStorage.removeItem(JWT_STORAGE_KEY);
+  showLogin();
 });
 
 // ─── CHAT LOGIC ──────────────────────────────────────────
@@ -1059,29 +1072,37 @@ const conversationHistory = [];
 
 async function fetchReplyFromBackend(text) {
   try {
+    // Build headers: on Netlify include JWT Bearer token; locally just use cookies
+    const headers = { 'Content-Type': 'application/json' };
+    if (IS_NETLIFY) {
+      const token = localStorage.getItem(JWT_STORAGE_KEY);
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const res = await fetch(API_URL, {
       method: 'POST',
-      credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json' },
+      credentials: IS_NETLIFY ? 'omit' : 'same-origin',
+      headers,
       body: JSON.stringify({
         message: text,
         history: conversationHistory.slice(-6), // last 3 exchanges
       }),
     });
-      if (res.status === 401) {
-        // show login screen and instruct user to authenticate
-        loginError.style.display = 'none';
-        loginScreen.style.display = 'flex';
-        loginScreen.style.opacity = '1';
-        return {
-          reply: 'You must sign in to use the HR assistant. Please enter your access code.',
-          steps: [],
-          info: { label: 'Authentication', text: 'Enter your access code to continue.' },
-          ticket: false,
-          ctaLabel: null,
-        };
-      }
-      if (!res.ok) throw new Error('HTTP ' + res.status);
+
+    if (res.status === 401) {
+      // Token expired or missing — send user back to login
+      if (IS_NETLIFY) localStorage.removeItem(JWT_STORAGE_KEY);
+      showLogin();
+      return {
+        reply: 'Your session has expired. Please sign in again.',
+        steps: [],
+        info: { label: 'Authentication', text: 'Enter your access code to continue.' },
+        ticket: false,
+        ctaLabel: null,
+      };
+    }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+
     const data = await res.json();
 
     // Update history for next turn
@@ -1092,9 +1113,9 @@ async function fetchReplyFromBackend(text) {
   } catch (err) {
     console.error('Backend error:', err);
     return {
-      reply: `I couldn't reach the HR assistant right now. Check that the backend is running on localhost:3000.`,
+      reply: `I couldn't reach the HR assistant right now. Please try again in a moment.`,
       steps: [],
-      info: { label: 'Debug', text: err.message },
+      info: { label: 'Error', text: err.message },
       ticket: false,
       ctaLabel: null,
     };
