@@ -1,9 +1,8 @@
 // netlify/functions/admin-chats.js
 // Mirrors GET /admin/chats from server.js for Netlify deployment.
-// NOTE: Netlify Functions have no persistent filesystem, so chat history is
-// not stored between function invocations. Returns an empty array with a note.
-// To add persistence, integrate a database (Supabase, MongoDB Atlas, etc.).
+// Reads all stored chat sessions from Netlify Blobs.
 import { authFromHeaders } from './lib/jwt.js';
+import { getStore } from '@netlify/blobs';
 
 export async function handler(event) {
   if (event.httpMethod !== 'GET') {
@@ -20,10 +19,39 @@ export async function handler(event) {
     };
   }
 
-  // No persistent storage on Netlify — return empty array
-  return {
-    statusCode: 200,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify([]),
-  };
+  try {
+    const store = getStore('chats');
+    const { blobs } = await store.list();
+
+    if (!blobs || blobs.length === 0) {
+      return {
+        statusCode: 200,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify([]),
+      };
+    }
+
+    // Fetch all chat entries in parallel
+    const chats = (
+      await Promise.all(
+        blobs.map(b => store.get(b.key, { type: 'json' }).catch(() => null))
+      )
+    ).filter(Boolean);
+
+    // Sort newest first (same as server.js)
+    chats.sort((a, b) => (b.at || '').localeCompare(a.at || ''));
+
+    return {
+      statusCode: 200,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(chats),
+    };
+  } catch (err) {
+    console.error('[admin-chats] error:', err);
+    return {
+      statusCode: 500,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: err.message }),
+    };
+  }
 }

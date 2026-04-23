@@ -2,6 +2,7 @@
 // Mirrors POST /api/chat from server.js for Netlify deployment.
 // Auth: Bearer JWT from Authorization header (set by the frontend on Netlify).
 import { authFromHeaders } from './lib/jwt.js';
+import { getStore } from '@netlify/blobs';
 
 const GROQ_KEY = process.env.GROQ_API_KEY;
 const VF_KEY   = process.env.VOICEFLOW_API_KEY;
@@ -144,8 +145,21 @@ export async function handler(event) {
       reply = localFallback(message);
     }
 
-    // NOTE: No persistent chat storage in Netlify Functions (no filesystem).
-    // Integrate a DB (e.g. Supabase, MongoDB Atlas) here if chat logs are needed.
+    // Persist chat record to Netlify Blobs so admin panel can view sessions.
+    try {
+      const store = getStore('chats');
+      const chatId = String(Date.now());
+      await store.setJSON(chatId, {
+        id: chatId,
+        at: new Date().toISOString(),
+        message,
+        history,
+        kbContext: kbContext || '',
+        reply,
+      });
+    } catch (e) {
+      console.warn('[chat] failed to store chat in blobs:', e.message);
+    }
 
     return {
       statusCode: 200,

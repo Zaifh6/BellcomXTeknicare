@@ -131,10 +131,6 @@
         return;
       }
       sessions = await r.json();
-      if (!sessions.length) {
-        container.innerHTML = '<div style="color:var(--muted);padding:12px">No stored chat sessions yet. Chat history is only persisted when running locally.</div>';
-        return;
-      }
       sessions.sort((a,b)=> (b.at||'').localeCompare(a.at||''));
       renderSessions();
     }

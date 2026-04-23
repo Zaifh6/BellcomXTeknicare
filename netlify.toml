@@ -29,6 +29,11 @@
   status = 200
 
 [[redirects]]
+  from = "/admin/chats/:id"
+  to   = "/.netlify/functions/admin-chat-item"
+  status = 200
+
+[[redirects]]
   from = "/api/chat"
   to   = "/.netlify/functions/chat"
   status = 200
