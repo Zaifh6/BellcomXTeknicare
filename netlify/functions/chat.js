@@ -3,6 +3,7 @@
 // Auth: Bearer JWT from Authorization header (set by the frontend on Netlify).
 import { authFromHeaders } from './lib/jwt.js';
 import { getStore } from '@netlify/blobs';
+import { findInLocalKB } from './lib/kb-articles.js';
 
 const GROQ_KEY = process.env.GROQ_API_KEY;
 const VF_KEY   = process.env.VOICEFLOW_API_KEY;
@@ -124,18 +125,32 @@ export async function handler(event) {
   }
 
   try {
-    // Query Voiceflow KB
+    // ── Step 1: Query Voiceflow KB ─────────────────────────────────────────
     let kbContext = '';
     if (VF_KEY && VF_PROJECT) {
       kbContext = await queryVoiceflowKB(message);
     }
 
+    // ── Step 2: If VF KB has nothing, try the embedded local KB ───────────
+    // This mirrors the findLocalKB() fallback in server.js and ensures that
+    // policy articles (e.g. leveraged FX rules) work on Netlify even though
+    // the data/ folder is gitignored and not deployed.
+    if (!kbContext || !kbContext.trim()) {
+      const localHit = findInLocalKB(message);
+      if (localHit) {
+        console.log('[chat] using local KB fallback');
+        kbContext = localHit;
+      }
+    }
+
+    // ── Step 3: Generate reply ─────────────────────────────────────────────
     let reply;
     try {
       if (GROQ_KEY && kbContext && kbContext.trim()) {
+        // Groq + KB context = best answer
         reply = await askGroq(message, kbContext, history);
       } else if (GROQ_KEY) {
-        // Groq available but no KB context — still ask Groq with no context
+        // Groq without KB context — handles general HR questions
         reply = await askGroq(message, '', history);
       } else {
         reply = localFallback(message);
